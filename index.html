@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Earning Pro</title>
+    
+    <!-- Telegram WebApp Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Monetag Ads SDK -->
+    <script src='https://libtl.com/sdk.js' data-zone='10055912' data-sdk='show_10055912'></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0f0c15;
+            --card-bg: #1e1829;
+            --primary: #7b40f2;
+            --primary-hover: #6a35d4;
+            --text-main: #ffffff;
+            --text-muted: #8e8ba3;
+            --green: #00d29d;
+            --gold: #ffc107;
+            --red: #ff4757;
+            --nav-bg: #15111e;
+            --bkash-color: #e2136e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- Header Section --- */
+        .app-header {
+            background-color: var(--bg-color);
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #2a2635;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            font-size: 18px;
+            color: var(--primary);
+        }
+
+        .verified-badge { color: #3b82f6; font-size: 14px; margin-left: 5px; }
+
+        /* --- Notice Bar (New) --- */
+        .notice-bar {
+            background: #272133;
+            color: var(--gold);
+            font-size: 12px;
+            padding: 8px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            border-bottom: 1px solid #332d42;
+        }
+
+        .stats-card {
+            background-color: var(--card-bg);
+            margin: 15px;
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            text-align: center;
+            border: 1px solid #332d42;
+        }
+
+        .stat-item h4 {
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .stat-item span {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .text-green { color: var(--green); }
+        .text-purple { color: #a88bf2; }
+
+        /* --- Main Scrollable Area --- */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 80px;
+        }
+
+        .container { padding: 0 15px; }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .btn-main {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(123, 64, 242, 0.3);
+            transition: 0.2s;
+        }
+
+        .btn-main:active { transform: scale(0.98); }
+        .btn-main:disabled { background-color: #4a4a4a; cursor: not-allowed; box-shadow: none; }
+
+        /* --- Activation Status Banner --- */
+        .activation-status {
+            background-color: var(--red);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 0 15px 15px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        .activation-status.active {
+            background-color: var(--green);
+            animation: none;
+            cursor: default;
+        }
+        
+        .activation-status.pending {
+            background-color: var(--gold);
+            color: black;
+            animation: none;
+            cursor: default;
+        }
+
+        .activation-status.rejected {
+            background-color: var(--red);
+            animation: pulse 1s infinite;
+            cursor: pointer;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 71, 87, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
+        }
+
+        /* --- Tabs Logic --- */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- TASK TAB Styles --- */
+        .ad-type-tabs {
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid #332d42;
+            margin-bottom: 15px;
+        }
+
+        .ad-tab {
+            padding: 10px 0;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .ad-tab.active {
+            color: white;
+            font-weight: 600;
+        }
+
+        .ad-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--primary);
+        }
+
+        .ad-card {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid #332d42;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Lock Overlay */
+        .card-lock-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 12, 21, 0.95);
+            backdrop-filter: blur(2px);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 15px;
+            display: none;
+        }
+        
+        .card-lock-overlay i { font-size: 30px; color: #ff4757; margin-bottom: 10px; }
+        .card-lock-overlay span { font-size: 14px; font-weight: bold; color: var(--red); }
+
+        .ad-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .coin-badge {
+            background-color: #2a2438;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .progress-section {
+            background-color: #272133;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background-color: #383147;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #6a4cd9;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* --- Dynamic Task List Styles --- */
+        .task-list-item {
+            background-color: var(--card-bg);
+            padding: 12px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border: 1px solid #332d42;
+        }
+        .task-icon {
+            width: 35px; height: 35px; background: #2a2438; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; color: var(--primary);
+        }
+        .task-info { flex: 1; margin-left: 10px; }
+        .task-title { font-size: 13px; font-weight: 600; }
+        .task-reward { font-size: 11px; color: var(--green); }
+        .btn-claim {
+            background: var(--primary); color: white; border: none;
+            padding: 6px 14px; border-radius: 20px; font-size: 11px; cursor: pointer;
+        }
+        .btn-claim.completed { background: #333; cursor: default; }
+
+        /* --- CARDS TAB Styles --- */
+        .scratch-card-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .scratch-card {
+            width: 160px;
+            height: 160px;
+            background: linear-gradient(135deg, #ffd700, #ffb900);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #5c4206;
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .scratch-card:active { transform: scale(0.95); }
+
+        /* --- INVITE TAB Styles --- */
+        .invite-box {
+            background-color: #272133;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border: 1px solid #383147;
+        }
+
+        .invite-link {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            outline: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .copy-btn {
+            background-color: var(--primary);
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .join-channel-btn {
+            background-color: #0088cc;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            display: block;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+            color: var(--text-muted);
+            text-align: center;
+        }
+        
+        .duck-emoji { font-size: 80px; margin-bottom: 10px; }
+
+        /* --- WITHDRAW TAB Styles --- */
+        .form-group { margin-bottom: 15px; }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            background-color: #272133;
+            border: 1px solid #383147;
+            padding: 14px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+
+        /* --- Bottom Navigation --- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--nav-bg);
+            border-top: 1px solid #2a2635;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 200;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 10px;
+            gap: 5px;
+            cursor: pointer;
+            width: 25%;
+        }
+
+        .nav-item i { font-size: 18px; margin-bottom: 2px; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active i { color: var(--primary); }
+
+        /* --- ACTIVATION MODAL --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.85);
+            z-index: 999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--primary);
+            border-radius: 15px;
+            padding: 25px;
+            width: 100%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(123, 64, 242, 0.4);
+        }
+
+        .modal-icon {
+            font-size: 50px;
+            color: var(--gold);
+            margin-bottom: 15px;
+        }
+        
+        .modal-icon.danger { color: var(--red); }
+
+        .modal-title {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .modal-desc {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .pay-info {
+            background: #2a2438;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px dashed #555;
+            text-align: center;
+        }
+        
+        .pay-number {
+            color: var(--bkash-color);
+            font-size: 22px;
+            font-weight: bold;
+            display: block;
+            margin: 5px 0;
+            letter-spacing: 1px;
+            user-select: all;
+        }
+
+        .pay-method-badge {
+            background-color: var(--bkash-color);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-left">
+            <i class="fa-solid fa-coins"></i>
+            <span>Earning Pro <i class="fa-solid fa-circle-check verified-badge"></i></span>
+        </div>
+        <div>
+            <i class="fa-solid fa-bell"></i>
+        </div>
+    </header>
+
+    <!-- LIVE NOTICE BAR (Sync with Admin) -->
+    <div class="notice-bar">
+        <marquee id="liveNotice">Welcome to Earning Pro! Start earning today...</marquee>
+    </div>
+
+    <!-- User Stats -->
+    <div class="stats-card">
+        <div class="stat-item">
+            <h4>ID</h4>
+            <span id="displayUserId">...</span>
+        </div>
+        <div class="stat-item">
+            <h4>BALANCE</h4>
+            <span class="text-green"><span id="userBalance">0.00</span> BDT</span>
+        </div>
+        <div class="stat-item">
+            <h4>CARDS</h4>
+            <span class="text-purple"><i class="fa-solid fa-ticket"></i> <span id="userCards">0</span></span>
+        </div>
+    </div>
+
+    <!-- Activation Alert Banner -->
+    <div class="activation-status" id="mainStatus" onclick="handleStatusClick()">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+    </div>
+
+    <!-- Scrollable Content -->
+    <div class="content-area">
+        
+        <!-- === TASK TAB === -->
+        <div id="tab-task" class="tab-content active container">
+            
+            <div class="section-title">
+                <i class="fa-solid fa-rectangle-ad"></i> Watch Ads & Earn
+            </div>
+
+            <div class="ad-type-tabs">
+                <div class="ad-tab active">Monetag ⚡</div>
+                <div class="ad-tab">Mega Ads 🔥</div>
+            </div>
+
+            <!-- AD CARD -->
+            <div class="ad-card">
+                <!-- Lock Overlay -->
+                <div class="card-lock-overlay" id="adLock">
+                    <i class="fa-solid fa-lock"></i>
+                    <span>Activate Account First</span>
+                </div>
+
+                <div class="ad-header">
+                    <div><strong>Monetag Ads ⚡</strong></div>
+                    <div class="coin-badge"><i class="fa-solid fa-coins"></i> 0.10 BDT</div>
+                </div>
+
+                <div class="progress-section">
+                    <div class="progress-label">
+                        <span>Cycle Progress</span>
+                        <span style="color:#a88bf2;"><span id="adsWatchedCount">0</span>/6</span>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" id="adProgressBar" style="width: 0%"></div></div>
+                    <div class="sub-text">Reset every 6 hours</div>
+                </div>
+
+                <div id="countdownTimer" style="text-align:center; color:#ff4757; font-size:13px; margin-bottom:10px; display:none;">
+                    Wait <span id="timerSec">45</span>s for next ad
+                </div>
+
+                <button class="btn-main" id="watchAdBtn" onclick="tryWatchAd()">
+                    <i class="fa-solid fa-play-circle"></i> Watch Ad Now
+                </button>
+            </div>
+
+            <!-- DYNAMIC TASK LIST (Sync with Admin) -->
+            <div class="section-title">Extra Tasks</div>
+            <div id="dynamicTaskList">
+                <div class="empty-state" style="padding: 20px 0;">
+                    <p style="font-size: 12px;">No extra tasks available</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- === CARDS TAB === -->
+        <div id="tab-cards" class="tab-content container">
+            <div class="section-title">Available Scratch Cards</div>
+            <hr style="border: 0; border-top: 1px solid #332d42; margin-bottom: 20px;">
+            
+            <div class="scratch-card-container">
+                <div class="scratch-card" onclick="scratchCard()">
+                    <!-- Lock Overlay -->
+                    <div class="card-lock-overlay" id="cardLock" style="display: flex; border-radius: 12px;">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <i class="fa-solid fa-crown"></i>
+                    <span id="cardText">TAP TO SCRATCH</span>
+                </div>
+            </div>
+            <p style="text-align:center; color:#8e8ba3; font-size:14px; margin-top:15px; font-weight: bold;">
+                স্ক্র্যাচ করে পুরস্কার জিতুন!
+            </p>
+        </div>
+
+        <!-- === INVITE TAB === -->
+        <div id="tab-invite" class="tab-content container">
+            <a href="https://t.me/shbtechbd" target="_blank" class="join-channel-btn" id="channelBtn">
+                <i class="fa-brands fa-telegram"></i> Join Our Channel
+            </a>
+
+            <div class="section-title">Your Referral Link</div>
+            
+            <div class="invite-box">
+                <input type="text" class="invite-link" id="refLink" value="Loading..." readonly>
+                <button class="copy-btn" onclick="copyRefLink()"><i class="fa-regular fa-copy"></i></button>
+            </div>
+
+            <div class="section-title">My Referrals</div>
+            <div style="text-align:center; color:#00d29d; font-size:14px; margin-bottom: 10px;">Total Referrals: <span id="refCount">0</span></div>
+
+            <div class="empty-state">
+                <div class="duck-emoji">🐤</div>
+                <p>Share your link to start earning!</p>
+                <p style="font-size:12px; color:#a88bf2;">1 Referral = 1 Scratch Card</p>
+            </div>
+        </div>
+
+        <!-- === WITHDRAW TAB === -->
+        <div id="tab-withdraw" class="tab-content container">
+            <div class="section-title">Withdraw Funds</div>
+            <hr style="border: 0; border-top: 1px solid #332d42; margin-bottom: 15px;">
+            
+            <p style="font-size:12px; color:#8e8ba3; margin-bottom:15px; background: #2a2438; padding: 10px; border-radius: 8px;">
+                <i class="fa-solid fa-circle-info"></i> Minimum: 25 BDT, Maximum: 35 BDT
+            </p>
+
+            <div class="form-group">
+                <label class="form-label">Amount</label>
+                <input type="number" class="form-input" id="withdrawAmount" placeholder="Enter amount (25-35)">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Withdrawal Method</label>
+                <select class="form-select" id="withdrawMethod">
+                    <option value="">Select a method</option>
+                    <option value="bkash">Bkash</option>
+                    <option value="nagad">Nagad</option>
+                    <option value="binance">Binance (USDT)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Account Number / ID</label>
+                <input type="text" class="form-input" id="withdrawNumber" placeholder="Number or Binance Pay ID">
+            </div>
+
+            <button class="btn-main" onclick="attemptWithdraw()">Withdraw</button>
+
+            <div class="section-title" style="margin-top: 30px;">Withdrawal History</div>
+            <hr style="border: 0; border-top: 1px solid #332d42; margin-bottom: 15px;">
+
+            <div id="withdrawHistoryList">
+                 <div class="empty-state">
+                    <div class="duck-emoji" style="filter: grayscale(0.2);">🤔</div>
+                    <p>No withdrawal history yet.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('task', this)">
+            <i class="fa-solid fa-list-check"></i>
+            <span>TASK</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('cards', this)">
+            <i class="fa-solid fa-credit-card"></i>
+            <span>CARDS</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('invite', this)">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>INVITE</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('withdraw', this)">
+            <i class="fa-solid fa-money-bill-transfer"></i>
+            <span>WITHDRAW</span>
+        </div>
+    </nav>
+
+    <!-- === ACTIVATION MODAL POPUP === -->
+    <div id="activationModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <h3 class="modal-title">Activate Premium</h3>
+            <p class="modal-desc">
+                একাউন্ট অ্যাক্টিভ করতে নিচের নাম্বারে ১০ টাকা <strong>Send Money</strong> করুন এবং TrxID দিন।
+            </p>
+
+            <div class="pay-info">
+                <span class="pay-method-badge">BKASH PERSONAL</span>
+                <span class="pay-number">01604858143</span>
+                <span style="font-size:12px; color:#00d29d;">(Send Money Only)</span>
+            </div>
+
+            <div class="form-group" style="text-align: left;">
+                <label class="form-label">Enter Transaction ID (TrxID)</label>
+                <input type="text" class="form-input" id="payProof" placeholder="Example: 9G7H....." style="text-transform: uppercase;">
+            </div>
+
+            <button class="btn-main" onclick="processActivation()">Verify & Activate</button>
+            <button style="background:transparent; border:none; color:#8e8ba3; margin-top:10px; font-size:12px; cursor:pointer;" onclick="closeModal('activationModal')">Close</button>
+        </div>
+    </div>
+
+    <!-- === REJECTION ALERT MODAL === -->
+    <div id="rejectionModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon danger"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <h3 class="modal-title" style="color: #ff4757;">Activation Rejected</h3>
+            <p class="modal-desc">
+                এডমিন আপনার পেমেন্ট রিকোয়েস্ট রিজেক্ট করেছে। TrxID ভুল ছিল অথবা টাকা পাওয়া যায়নি। অনুগ্রহ করে সঠিক তথ্য দিয়ে আবার চেষ্টা করুন।
+            </p>
+            <button class="btn-main" onclick="closeModal('rejectionModal'); openActivationModal();">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // FIREBASE CONFIGURATION
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkwmmvizglg1i5MymmRWiA2KPhAHVO5Sc",
+            authDomain: "earningpro-2a4b8.firebaseapp.com",
+            databaseURL: "https://earningpro-2a4b8-default-rtdb.firebaseio.com",
+            projectId: "earningpro-2a4b8",
+            storageBucket: "earningpro-2a4b8.firebasestorage.app",
+            messagingSenderId: "366145424614",
+            appId: "1:366145424614:web:2cc7a2a40648519a97ff27"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+
+        // ============================================
+        // TELEGRAM & USER SETUP
+        // ============================================
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        const rawUser = tg.initDataUnsafe?.user;
+        const userId = rawUser ? rawUser.id.toString() : 'TEST_USER_999';
+        const userName = rawUser ? rawUser.first_name : 'Guest';
+        const startParam = tg.initDataUnsafe?.start_param; 
+
+        // Bot Info
+        const BOT_USERNAME = "Task_To_Work_bot"; 
+
+        // Local State
+        let userProfile = {};
+        let dbRef = db.ref('users/' + userId);
+        let adminAdLink = null; // Store Admin Ad Link
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        window.onload = function() {
+            document.getElementById('displayUserId').innerText = userId;
+            document.getElementById('refLink').value = `https://t.me/${BOT_USERNAME}?startapp=${userId}`;
+
+            // 1. Fetch User Data
+            dbRef.once('value').then((snapshot) => {
+                if (!snapshot.exists()) {
+                    createUser(startParam);
+                } else {
+                    initRealtimeListener();
+                }
+            });
+
+            // 2. Fetch Admin Settings (Notice, Channel, Ads)
+            db.ref('settings').on('value', snap => {
+                const settings = snap.val();
+                if(settings) {
+                    if(settings.notice) document.getElementById('liveNotice').innerText = settings.notice;
+                    if(settings.channel) document.getElementById('channelBtn').href = settings.channel;
+                    if(settings.adLink) adminAdLink = settings.adLink; // Store link for Watch Ad button
+                }
+            });
+
+            // 3. Fetch Dynamic Tasks
+            db.ref('tasks').on('value', snap => {
+                const tasks = snap.val();
+                renderDynamicTasks(tasks);
+            });
+        };
+
+        function createUser(referrerId) {
+            const initialData = {
+                id: userId,
+                name: userName,
+                balance: 0.00,
+                status: 'inactive',
+                cards: 0,
+                referrals: 0,
+                ad_cycle: { count: 0, last_reset: Date.now(), last_watch: 0 },
+                completed_tasks: {}
+            };
+
+            if (referrerId && referrerId !== userId) {
+                db.ref('users/' + referrerId).once('value').then(snap => {
+                    if (snap.exists()) {
+                        const refData = snap.val();
+                        db.ref('users/' + referrerId).update({
+                            referrals: (refData.referrals || 0) + 1,
+                            cards: (refData.cards || 0) + 1
+                        });
+                        initialData.referred_by = referrerId;
+                    }
+                    dbRef.set(initialData).then(() => initRealtimeListener());
+                });
+            } else {
+                dbRef.set(initialData).then(() => initRealtimeListener());
+            }
+        }
+
+        function initRealtimeListener() {
+            dbRef.on('value', (snapshot) => {
+                if(snapshot.exists()) {
+                    userProfile = snapshot.val();
+                    updateUI();
+                }
+            });
+        }
+
+        // ============================================
+        // UI UPDATES
+        // ============================================
+        function updateUI() {
+            document.getElementById('userBalance').innerText = (userProfile.balance || 0).toFixed(2);
+            document.getElementById('userCards').innerText = userProfile.cards || 0;
+            document.getElementById('refCount').innerText = userProfile.referrals || 0;
+
+            const cycle = userProfile.ad_cycle || { count: 0, last_reset: 0 };
+            checkAdResetCycle(cycle); 
+            
+            document.getElementById('adsWatchedCount').innerText = cycle.count || 0;
+            const progressPct = ((cycle.count || 0) / 6) * 100;
+            document.getElementById('adProgressBar').style.width = progressPct + "%";
+
+            const status = userProfile.status || 'inactive';
+            const banner = document.getElementById('mainStatus');
+            const adLock = document.getElementById('adLock');
+            const cardLock = document.getElementById('cardLock');
+
+            banner.className = 'activation-status'; 
+            if (status === 'active') {
+                banner.classList.add('active');
+                banner.innerHTML = '<i class="fa-solid fa-check-circle"></i> Earning Pro Verified';
+                adLock.style.display = 'none';
+                cardLock.style.display = 'none';
+            } else if (status === 'pending') {
+                banner.classList.add('pending');
+                banner.innerHTML = '<i class="fa-solid fa-clock"></i> Approval Pending (Tasks Open)';
+                adLock.style.display = 'none'; 
+                cardLock.style.display = 'none';
+            } else if (status === 'rejected') {
+                banner.classList.add('rejected');
+                banner.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Request Rejected (Click to Fix)';
+                adLock.style.display = 'flex';
+                cardLock.style.display = 'flex';
+            } else {
+                banner.innerHTML = '<i class="fa-solid fa-lock"></i> Account Not Activated (Click to Activate)';
+                adLock.style.display = 'flex';
+                cardLock.style.display = 'flex';
+            }
+        }
+
+        // ============================================
+        // DYNAMIC TASKS LOGIC
+        // ============================================
+        function renderDynamicTasks(tasks) {
+            const container = document.getElementById('dynamicTaskList');
+            container.innerHTML = '';
+
+            if(!tasks) {
+                container.innerHTML = '<div class="empty-state"><p style="font-size: 12px;">No extra tasks available</p></div>';
+                return;
+            }
+
+            const completed = userProfile.completed_tasks || {};
+
+            Object.values(tasks).forEach(task => {
+                const isDone = completed[task.id] === true;
+                const btnClass = isDone ? 'btn-claim completed' : 'btn-claim';
+                const btnText = isDone ? 'Completed' : 'Claim';
+                const onClick = isDone ? '' : `onclick="doTask('${task.id}', '${task.link}', ${task.reward})"`;
+
+                const html = `
+                <div class="task-list-item">
+                    <div class="task-icon"><i class="${task.icon}"></i></div>
+                    <div class="task-info">
+                        <div class="task-title">${task.title}</div>
+                        <div class="task-reward">+${task.reward} BDT</div>
+                    </div>
+                    <button class="${btnClass}" ${onClick}>${btnText}</button>
+                </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        function doTask(taskId, link, reward) {
+            if(userProfile.status === 'inactive' || userProfile.status === 'rejected') {
+                alert("Activate account first!");
+                return;
+            }
+
+            // Open Link
+            window.open(link, '_blank');
+
+            // Simulate Verification & Reward (Simple implementation as requested)
+            setTimeout(() => {
+                const confirmClaim = confirm("Did you join/complete the task?");
+                if(confirmClaim) {
+                    const updates = {};
+                    updates[`users/${userId}/balance`] = (userProfile.balance || 0) + reward;
+                    updates[`users/${userId}/completed_tasks/${taskId}`] = true;
+                    
+                    db.ref().update(updates).then(() => {
+                        alert(`Reward Added: ${reward} BDT`);
+                    });
+                }
+            }, 5000); // 5 sec delay
+        }
+
+        // ============================================
+        // ADS LOGIC (Admin Link or Monetag)
+        // ============================================
+        function checkAdResetCycle(cycle) {
+            if (Date.now() - cycle.last_reset > 6 * 60 * 60 * 1000) {
+                dbRef.child('ad_cycle').update({ count: 0, last_reset: Date.now() });
+            }
+        }
+
+        function tryWatchAd() {
+            const status = userProfile.status;
+            if (status !== 'active' && status !== 'pending') {
+                alert("Please Activate Account First");
+                return;
+            }
+
+            const cycle = userProfile.ad_cycle || { count: 0, last_watch: 0 };
+            if (cycle.count >= 6) {
+                alert("Daily limit (6 Ads) reached! Come back later.");
+                return;
+            }
+            if (Date.now() - cycle.last_watch < 45000) {
+                alert("Please wait for cooldown!");
+                return;
+            }
+
+            // CHECK ADMIN LINK FIRST
+            if (adminAdLink && adminAdLink.length > 5) {
+                window.open(adminAdLink, '_blank');
+                giveAdReward(); // Direct Reward for Direct Link
+            } else {
+                // FALLBACK TO MONETAG SDK
+                if (typeof show_10055912 === 'function') {
+                    show_10055912().then(() => {
+                        giveAdReward();
+                    }).catch(e => {
+                        alert("Ad failed to load. Check Internet.");
+                    });
+                } else {
+                    alert("Ad System Loading...");
+                }
+            }
+        }
+
+        function giveAdReward() {
+            const currentBal = parseFloat(userProfile.balance || 0);
+            const currentCount = userProfile.ad_cycle ? userProfile.ad_cycle.count : 0;
+            
+            dbRef.update({
+                balance: currentBal + 0.10,
+                'ad_cycle/count': currentCount + 1,
+                'ad_cycle/last_watch': Date.now()
+            });
+
+            startTimerUI(45);
+        }
+
+        function startTimerUI(seconds) {
+            const timerBox = document.getElementById('countdownTimer');
+            const timerSpan = document.getElementById('timerSec');
+            const btn = document.getElementById('watchAdBtn');
+
+            timerBox.style.display = 'block';
+            btn.disabled = true;
+
+            let left = seconds;
+            timerSpan.innerText = left;
+
+            const interval = setInterval(() => {
+                left--;
+                timerSpan.innerText = left;
+                if (left <= 0) {
+                    clearInterval(interval);
+                    timerBox.style.display = 'none';
+                    btn.disabled = false;
+                }
+            }, 1000);
+        }
+
+        // ============================================
+        // SCRATCH & WITHDRAW LOGIC
+        // ============================================
+        function scratchCard() {
+             const status = userProfile.status;
+            if (status !== 'active' && status !== 'pending') return;
+
+            if ((userProfile.cards || 0) <= 0) {
+                alert("No cards! Invite friends.");
+                return;
+            }
+
+            if (!confirm("Use 1 Card to Scratch?")) return;
+
+            const rewards = [0.1, 0.3, 0.5, 1.0];
+            const prize = rewards[Math.floor(Math.random() * rewards.length)];
+
+            dbRef.update({
+                cards: (userProfile.cards || 0) - 1,
+                balance: parseFloat(userProfile.balance || 0) + prize
+            });
+
+            const cardText = document.getElementById('cardText');
+            cardText.innerText = `+${prize} BDT`;
+            setTimeout(() => {
+                alert(`Won ${prize} BDT`);
+                cardText.innerText = "TAP TO SCRATCH";
+            }, 500);
+        }
+
+        function attemptWithdraw() {
+            if (userProfile.status !== 'active') {
+                alert("Account must be Active (Verified) to withdraw.");
+                return;
+            }
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const method = document.getElementById('withdrawMethod').value;
+            const number = document.getElementById('withdrawNumber').value;
+
+            if (!method || !number || amount < 25 || amount > 35) {
+                alert("Invalid details or Amount (25-35)");
+                return;
+            }
+            if ((userProfile.balance || 0) < amount) {
+                alert("Insufficient balance.");
+                return;
+            }
+
+            const reqId = db.ref('withdrawals').push().key;
+            const updates = {};
+            updates['users/' + userId + '/balance'] = (userProfile.balance || 0) - amount;
+            updates['withdrawals/' + reqId] = {
+                userId: userId,
+                userName: userProfile.name || 'User',
+                amount: amount,
+                method: method,
+                number: number,
+                status: 'pending', 
+                time: Date.now()
+            };
+
+            db.ref().update(updates).then(() => {
+                alert("Withdrawal submitted!");
+                document.getElementById('withdrawAmount').value = '';
+            });
+        }
+
+        // ============================================
+        // ACTIVATION
+        // ============================================
+        function openActivationModal() {
+            document.getElementById('payProof').value = ""; 
+            document.getElementById('activationModal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function processActivation() {
+            const trxId = document.getElementById('payProof').value.trim();
+            if(trxId.length < 4) { alert("Invalid TrxID"); return; }
+
+            dbRef.update({
+                status: 'pending',
+                activation_req: { trx: trxId, time: Date.now(), method: 'bkash', status: 'pending' }
+            }).then(() => {
+                closeModal('activationModal');
+                alert("Request Sent!");
+            });
+        }
+
+        function handleStatusClick() {
+            if (!userProfile.status || userProfile.status === 'inactive' || userProfile.status === 'rejected') {
+                openActivationModal();
+            }
+        }
+
+        // ============================================
+        // UTILS
+        // ============================================
+        function copyRefLink() {
+            const copyText = document.getElementById("refLink");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); 
+            navigator.clipboard.writeText(copyText.value);
+            alert("Referral Link Copied!");
+        }
+
+        function switchTab(tabName, element) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            element.classList.add('active');
+        }
+    </script>
+</body>
+</html>
