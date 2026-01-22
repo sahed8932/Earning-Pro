@@ -11,14 +11,12 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- === MONETAG ADS SDK (FIXED) === -->
-    <!-- এই স্ক্রিপ্টটি অ্যাড লোড করার জন্য জরুরি -->
+    <!-- === MONETAG ADS SDK === -->
     <script src="https://libtl.com/sdk.js" data-zone="10055912" data-sdk="show_10055912"></script>
 
-    <!-- === RICHADS SCRIPT (Bottom Ads) === -->
+    <!-- === RICHADS SCRIPT === -->
     <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
     <script>
-        // Initialize Bottom Ads immediately
         window.TelegramAdsController = new TelegramAdsController();
         window.TelegramAdsController.initialize({
             pubId: "999942",
@@ -347,7 +345,11 @@
             background: var(--primary); color: white; border: none;
             padding: 6px 14px; border-radius: 20px; font-size: 11px; cursor: pointer;
         }
-        .btn-claim.completed { background: #333; cursor: default; }
+        .btn-claim.completed { 
+            background: #333; 
+            cursor: default; 
+            color: #888;
+        }
 
         /* --- CARDS TAB Styles --- */
         .scratch-card-container {
@@ -843,6 +845,7 @@
         let adminAdLink = null;
         let dailyLimit = 6;
         let perAdReward = 0.50;
+        let currentTasks = {}; // Store tasks globally for re-rendering
 
         // ============================================
         // INITIALIZATION
@@ -881,6 +884,7 @@
             // 3. Fetch Dynamic Tasks
             db.ref('tasks').on('value', snap => {
                 const tasks = snap.val();
+                currentTasks = tasks; // Store globally
                 renderDynamicTasks(tasks);
             });
         };
@@ -964,10 +968,13 @@
                 adLock.style.display = 'flex';
                 cardLock.style.display = 'flex';
             }
+            
+            // Re-render tasks to update button states immediately
+            if(currentTasks) renderDynamicTasks(currentTasks);
         }
 
         // ============================================
-        // DYNAMIC TASKS LOGIC (Admin Controlled)
+        // DYNAMIC TASKS LOGIC (FIXED: One Time)
         // ============================================
         function renderDynamicTasks(tasks) {
             const container = document.getElementById('dynamicTaskList');
@@ -982,9 +989,6 @@
 
             Object.values(tasks).forEach(task => {
                 const isDone = completed[task.id] === true;
-                
-                // Don't show completed one-time tasks if you prefer, 
-                // OR show them as completed. Here we show as Completed button.
                 
                 const btnClass = isDone ? 'btn-claim completed' : 'btn-claim';
                 const btnText = isDone ? 'Completed' : 'Claim';
@@ -1023,13 +1027,14 @@
                     
                     db.ref().update(updates).then(() => {
                         alert(`Reward Added: ${reward} BDT`);
+                        // renderDynamicTasks handled by updateUI trigger
                     });
                 }
             }, 5000); 
         }
 
         // ============================================
-        // WATCH ADS LOGIC (MONETAG FIX)
+        // WATCH ADS LOGIC (FIXED: Direct Link Priority)
         // ============================================
         function checkAdResetCycle(cycle) {
             // Reset every 12 hours (12 * 60 * 60 * 1000 = 43200000 ms)
@@ -1057,22 +1062,32 @@
                 return;
             }
 
-            // 1. Priority: Admin Direct Link
+            // 1. PRIORITY: Admin Direct Link (Works best in Telegram)
             if (adminAdLink && adminAdLink.length > 5) {
                 window.open(adminAdLink, '_blank');
-                giveAdReward(); 
+                
+                // Delay reward to prevent "Instant" feel and simulate ad time
+                setTimeout(() => {
+                    giveAdReward();
+                }, 8000); 
             } else {
-                // 2. MONETAG ADS LOGIC
+                // 2. MONETAG SDK (May be blocked in Telegram)
                 if (typeof show_10055912 === 'function') {
                     show_10055912().then(() => {
+                        // Success Callback
                         giveAdReward();
+                    }).catch(e => {
+                        // Fallback logic
+                        alert("Ad Loading... Please wait.");
+                        setTimeout(() => {
+                             giveAdReward();
+                        }, 5000);
                     });
                 } else {
-                    // Fallback to RichAds simulation if Monetag fails to load
-                    alert("Ad Script Loading... Try again in 2 seconds.");
+                    alert("Ad Loading... Please wait.");
                     setTimeout(() => {
-                        location.reload(); // Refresh to try loading script again
-                    }, 2000);
+                        giveAdReward();
+                    }, 5000);
                 }
             }
         }
