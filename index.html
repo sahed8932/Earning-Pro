@@ -11,10 +11,14 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- === YOUR NEW AD SCRIPT (RICHADS) === -->
+    <!-- === MONETAG ADS SDK (FIXED) === -->
+    <!-- এই স্ক্রিপ্টটি অ্যাড লোড করার জন্য জরুরি -->
+    <script src="https://libtl.com/sdk.js" data-zone="10055912" data-sdk="show_10055912"></script>
+
+    <!-- === RICHADS SCRIPT (Bottom Ads) === -->
     <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
     <script>
-        // Initialize Ads immediately
+        // Initialize Bottom Ads immediately
         window.TelegramAdsController = new TelegramAdsController();
         window.TelegramAdsController.initialize({
             pubId: "999942",
@@ -632,7 +636,7 @@
                         <span style="color:#a88bf2;"><span id="adsWatchedCount">0</span>/<span id="dailyLimitDisp">6</span></span>
                     </div>
                     <div class="progress-bar"><div class="progress-fill" id="adProgressBar" style="width: 0%"></div></div>
-                    <div class="sub-text">Reset every 24 hours</div>
+                    <div class="sub-text">Reset every 12 hours</div>
                 </div>
 
                 <div id="countdownTimer" style="text-align:center; color:#ff4757; font-size:13px; margin-bottom:10px; display:none;">
@@ -1025,11 +1029,11 @@
         }
 
         // ============================================
-        // WATCH ADS LOGIC
+        // WATCH ADS LOGIC (MONETAG FIX)
         // ============================================
         function checkAdResetCycle(cycle) {
-            // Reset every 24 hours (24 * 60 * 60 * 1000)
-            if (Date.now() - cycle.last_reset > 86400000) {
+            // Reset every 12 hours (12 * 60 * 60 * 1000 = 43200000 ms)
+            if (Date.now() - cycle.last_reset > 43200000) {
                 dbRef.child('ad_cycle').update({ count: 0, last_reset: Date.now() });
             }
         }
@@ -1045,7 +1049,7 @@
             
             // Use Admin Defined Limit
             if (cycle.count >= dailyLimit) {
-                alert(`Daily limit (${dailyLimit} Ads) reached! Resets in 24h.`);
+                alert(`Daily limit (${dailyLimit} Ads) reached! Resets in 12h.`);
                 return;
             }
             if (Date.now() - cycle.last_watch < 45000) {
@@ -1058,12 +1062,18 @@
                 window.open(adminAdLink, '_blank');
                 giveAdReward(); 
             } else {
-                // 2. Fallback: Your RichAds script is running in background.
-                // We simulate a click/action here since the script is automatic.
-                alert("Ad Loading... Please wait.");
-                setTimeout(() => {
-                    giveAdReward();
-                }, 3000);
+                // 2. MONETAG ADS LOGIC
+                if (typeof show_10055912 === 'function') {
+                    show_10055912().then(() => {
+                        giveAdReward();
+                    });
+                } else {
+                    // Fallback to RichAds simulation if Monetag fails to load
+                    alert("Ad Script Loading... Try again in 2 seconds.");
+                    setTimeout(() => {
+                        location.reload(); // Refresh to try loading script again
+                    }, 2000);
+                }
             }
         }
 
