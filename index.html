@@ -11,8 +11,16 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Monetag Ads SDK -->
-    <script src='https://libtl.com/sdk.js' data-zone='10055912' data-sdk='show_10055912'></script>
+    <!-- === YOUR NEW AD SCRIPT (RICHADS) === -->
+    <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
+    <script>
+        // Initialize Ads immediately
+        window.TelegramAdsController = new TelegramAdsController();
+        window.TelegramAdsController.initialize({
+            pubId: "999942",
+            appId: "5838",
+        });
+    </script>
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -72,7 +80,7 @@
 
         .verified-badge { color: #3b82f6; font-size: 14px; margin-left: 5px; }
 
-        /* --- Notice Bar (New) --- */
+        /* --- Notice Bar --- */
         .notice-bar {
             background: #272133;
             color: var(--gold);
@@ -601,7 +609,7 @@
             </div>
 
             <div class="ad-type-tabs">
-                <div class="ad-tab active">Monetag ⚡</div>
+                <div class="ad-tab active">Fast Ads ⚡</div>
                 <div class="ad-tab">Mega Ads 🔥</div>
             </div>
 
@@ -614,17 +622,17 @@
                 </div>
 
                 <div class="ad-header">
-                    <div><strong>Monetag Ads ⚡</strong></div>
-                    <div class="coin-badge"><i class="fa-solid fa-coins"></i> 0.10 BDT</div>
+                    <div><strong>Daily Ads ⚡</strong></div>
+                    <div class="coin-badge"><i class="fa-solid fa-coins"></i> <span id="displayPerAd">0.50</span> BDT</div>
                 </div>
 
                 <div class="progress-section">
                     <div class="progress-label">
-                        <span>Cycle Progress</span>
-                        <span style="color:#a88bf2;"><span id="adsWatchedCount">0</span>/6</span>
+                        <span>Daily Progress</span>
+                        <span style="color:#a88bf2;"><span id="adsWatchedCount">0</span>/<span id="dailyLimitDisp">6</span></span>
                     </div>
                     <div class="progress-bar"><div class="progress-fill" id="adProgressBar" style="width: 0%"></div></div>
-                    <div class="sub-text">Reset every 6 hours</div>
+                    <div class="sub-text">Reset every 24 hours</div>
                 </div>
 
                 <div id="countdownTimer" style="text-align:center; color:#ff4757; font-size:13px; margin-bottom:10px; display:none;">
@@ -640,7 +648,7 @@
             <div class="section-title">Extra Tasks</div>
             <div id="dynamicTaskList">
                 <div class="empty-state" style="padding: 20px 0;">
-                    <p style="font-size: 12px;">No extra tasks available</p>
+                    <p style="font-size: 12px;">Loading tasks...</p>
                 </div>
             </div>
 
@@ -668,7 +676,7 @@
 
         <!-- === INVITE TAB === -->
         <div id="tab-invite" class="tab-content container">
-            <a href="https://t.me/shbtechbd" target="_blank" class="join-channel-btn" id="channelBtn">
+            <a href="#" target="_blank" class="join-channel-btn" id="channelBtn">
                 <i class="fa-brands fa-telegram"></i> Join Our Channel
             </a>
 
@@ -821,13 +829,16 @@
         const userName = rawUser ? rawUser.first_name : 'Guest';
         const startParam = tg.initDataUnsafe?.start_param; 
 
-        // Bot Info
         const BOT_USERNAME = "Task_To_Work_bot"; 
 
-        // Local State
+        // Global Variables
         let userProfile = {};
         let dbRef = db.ref('users/' + userId);
-        let adminAdLink = null; // Store Admin Ad Link
+        
+        // Admin Controlled Variables (Defaults)
+        let adminAdLink = null;
+        let dailyLimit = 6;
+        let perAdReward = 0.50;
 
         // ============================================
         // INITIALIZATION
@@ -845,13 +856,21 @@
                 }
             });
 
-            // 2. Fetch Admin Settings (Notice, Channel, Ads)
+            // 2. Fetch Admin Settings
             db.ref('settings').on('value', snap => {
                 const settings = snap.val();
                 if(settings) {
                     if(settings.notice) document.getElementById('liveNotice').innerText = settings.notice;
                     if(settings.channel) document.getElementById('channelBtn').href = settings.channel;
-                    if(settings.adLink) adminAdLink = settings.adLink; // Store link for Watch Ad button
+                    if(settings.adLink) adminAdLink = settings.adLink;
+                    
+                    // Daily Settings from Admin Panel
+                    if(settings.dailyLimit) dailyLimit = parseInt(settings.dailyLimit);
+                    if(settings.perAdReward) perAdReward = parseFloat(settings.perAdReward);
+                    
+                    // Update UI with Admin Settings
+                    document.getElementById('displayPerAd').innerText = perAdReward.toFixed(2);
+                    document.getElementById('dailyLimitDisp').innerText = dailyLimit;
                 }
             });
 
@@ -912,7 +931,7 @@
             checkAdResetCycle(cycle); 
             
             document.getElementById('adsWatchedCount').innerText = cycle.count || 0;
-            const progressPct = ((cycle.count || 0) / 6) * 100;
+            const progressPct = ((cycle.count || 0) / dailyLimit) * 100;
             document.getElementById('adProgressBar').style.width = progressPct + "%";
 
             const status = userProfile.status || 'inactive';
@@ -944,7 +963,7 @@
         }
 
         // ============================================
-        // DYNAMIC TASKS LOGIC
+        // DYNAMIC TASKS LOGIC (Admin Controlled)
         // ============================================
         function renderDynamicTasks(tasks) {
             const container = document.getElementById('dynamicTaskList');
@@ -959,6 +978,10 @@
 
             Object.values(tasks).forEach(task => {
                 const isDone = completed[task.id] === true;
+                
+                // Don't show completed one-time tasks if you prefer, 
+                // OR show them as completed. Here we show as Completed button.
+                
                 const btnClass = isDone ? 'btn-claim completed' : 'btn-claim';
                 const btnText = isDone ? 'Completed' : 'Claim';
                 const onClick = isDone ? '' : `onclick="doTask('${task.id}', '${task.link}', ${task.reward})"`;
@@ -986,7 +1009,7 @@
             // Open Link
             window.open(link, '_blank');
 
-            // Simulate Verification & Reward (Simple implementation as requested)
+            // Simulate Verification & Reward
             setTimeout(() => {
                 const confirmClaim = confirm("Did you join/complete the task?");
                 if(confirmClaim) {
@@ -998,14 +1021,15 @@
                         alert(`Reward Added: ${reward} BDT`);
                     });
                 }
-            }, 5000); // 5 sec delay
+            }, 5000); 
         }
 
         // ============================================
-        // ADS LOGIC (Admin Link or Monetag)
+        // WATCH ADS LOGIC
         // ============================================
         function checkAdResetCycle(cycle) {
-            if (Date.now() - cycle.last_reset > 6 * 60 * 60 * 1000) {
+            // Reset every 24 hours (24 * 60 * 60 * 1000)
+            if (Date.now() - cycle.last_reset > 86400000) {
                 dbRef.child('ad_cycle').update({ count: 0, last_reset: Date.now() });
             }
         }
@@ -1018,8 +1042,10 @@
             }
 
             const cycle = userProfile.ad_cycle || { count: 0, last_watch: 0 };
-            if (cycle.count >= 6) {
-                alert("Daily limit (6 Ads) reached! Come back later.");
+            
+            // Use Admin Defined Limit
+            if (cycle.count >= dailyLimit) {
+                alert(`Daily limit (${dailyLimit} Ads) reached! Resets in 24h.`);
                 return;
             }
             if (Date.now() - cycle.last_watch < 45000) {
@@ -1027,21 +1053,17 @@
                 return;
             }
 
-            // CHECK ADMIN LINK FIRST
+            // 1. Priority: Admin Direct Link
             if (adminAdLink && adminAdLink.length > 5) {
                 window.open(adminAdLink, '_blank');
-                giveAdReward(); // Direct Reward for Direct Link
+                giveAdReward(); 
             } else {
-                // FALLBACK TO MONETAG SDK
-                if (typeof show_10055912 === 'function') {
-                    show_10055912().then(() => {
-                        giveAdReward();
-                    }).catch(e => {
-                        alert("Ad failed to load. Check Internet.");
-                    });
-                } else {
-                    alert("Ad System Loading...");
-                }
+                // 2. Fallback: Your RichAds script is running in background.
+                // We simulate a click/action here since the script is automatic.
+                alert("Ad Loading... Please wait.");
+                setTimeout(() => {
+                    giveAdReward();
+                }, 3000);
             }
         }
 
@@ -1050,7 +1072,7 @@
             const currentCount = userProfile.ad_cycle ? userProfile.ad_cycle.count : 0;
             
             dbRef.update({
-                balance: currentBal + 0.10,
+                balance: currentBal + perAdReward, // Use Admin Defined Reward
                 'ad_cycle/count': currentCount + 1,
                 'ad_cycle/last_watch': Date.now()
             });
