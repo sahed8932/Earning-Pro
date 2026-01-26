@@ -964,8 +964,13 @@
                 adLock.style.display = 'flex';
                 cardLock.style.display = 'flex';
             } else {
+                // INACTIVE / TRIAL MODE
                 banner.innerHTML = '<i class="fa-solid fa-lock"></i> Account Not Activated (Click to Activate)';
-                adLock.style.display = 'flex';
+                
+                // Allow user to click ad button to trigger trial Logic (Hide Lock Overlay)
+                adLock.style.display = 'none'; 
+                
+                // Keep Scratch Card Locked for inactive
                 cardLock.style.display = 'flex';
             }
             
@@ -1010,7 +1015,7 @@
 
         function doTask(taskId, link, reward) {
             if(userProfile.status === 'inactive' || userProfile.status === 'rejected') {
-                alert("Activate account first!");
+                alert("Activate account first to do extra tasks!");
                 return;
             }
 
@@ -1034,7 +1039,7 @@
         }
 
         // ============================================
-        // WATCH ADS LOGIC (FIXED: Direct Link Priority)
+        // WATCH ADS LOGIC (UPDATED: TRIAL MODE)
         // ============================================
         function checkAdResetCycle(cycle) {
             // Reset every 12 hours (12 * 60 * 60 * 1000 = 43200000 ms)
@@ -1044,15 +1049,28 @@
         }
 
         function tryWatchAd() {
-            const status = userProfile.status;
-            if (status !== 'active' && status !== 'pending') {
-                alert("Please Activate Account First");
-                return;
-            }
-
+            const status = userProfile.status || 'inactive';
             const cycle = userProfile.ad_cycle || { count: 0, last_watch: 0 };
             
-            // Use Admin Defined Limit
+            // --- TRIAL LOGIC START ---
+            if (status === 'inactive') {
+                if (cycle.count >= 3) {
+                    // Trial Limit Reached - Show Bengali Prompt
+                    if(confirm("আপনানার ইনকাম বাড়াতে একাউন্ট একটিভ করুন ১০ টাকা দিয়ে। নাহলে কাজ আর উইথড্র কোনো টা করতে পারবেন না।\n\nএকাউন্ট একটিভ করতে এখানে চাপ দিন (OK)।")) {
+                        openActivationModal();
+                    }
+                    return; // Stop execution
+                }
+                // If count < 3, allow execution (Proceed to ad logic below)
+            } 
+            else if (status === 'rejected') {
+                alert("Activation Rejected. Please check stats card.");
+                return;
+            }
+            // --- TRIAL LOGIC END ---
+
+            
+            // Standard Check (Daily Limit for Active/Pending Users)
             if (cycle.count >= dailyLimit) {
                 alert(`Daily limit (${dailyLimit} Ads) reached! Resets in 12h.`);
                 return;
