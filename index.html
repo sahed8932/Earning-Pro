@@ -732,7 +732,7 @@
                 <input type="text" class="form-input" id="withdrawNumber" placeholder="Number or Binance Pay ID">
             </div>
 
-            <button class="btn-main" onclick="attemptWithdraw()">Withdraw</button>
+            <button class="btn-main" id="withdrawBtn" onclick="attemptWithdraw()">Withdraw</button>
 
             <div class="section-title" style="margin-top: 30px;">Withdrawal History</div>
             <hr style="border: 0; border-top: 1px solid #332d42; margin-bottom: 15px;">
@@ -931,12 +931,17 @@
         // UI UPDATES
         // ============================================
         function updateUI() {
-            document.getElementById('userBalance').innerText = (userProfile.balance || 0).toFixed(2);
+            // FIX: Ensure balance is treated as a float
+            const bal = parseFloat(userProfile.balance || 0);
+            document.getElementById('userBalance').innerText = bal.toFixed(2);
+            
             document.getElementById('userCards').innerText = userProfile.cards || 0;
             document.getElementById('refCount').innerText = userProfile.referrals || 0;
 
             const cycle = userProfile.ad_cycle || { count: 0, last_reset: 0 };
-            checkAdResetCycle(cycle); 
+            
+            // Check for Reset Cycle
+            checkAdResetCycle(cycle);
             
             document.getElementById('adsWatchedCount').innerText = cycle.count || 0;
             const progressPct = ((cycle.count || 0) / dailyLimit) * 100;
@@ -979,7 +984,7 @@
         }
 
         // ============================================
-        // DYNAMIC TASKS LOGIC (FIXED: One Time)
+        // DYNAMIC TASKS LOGIC
         // ============================================
         function renderDynamicTasks(tasks) {
             const container = document.getElementById('dynamicTaskList');
@@ -1027,41 +1032,51 @@
                 const confirmClaim = confirm("Did you join/complete the task?");
                 if(confirmClaim) {
                     const updates = {};
-                    updates[`users/${userId}/balance`] = (userProfile.balance || 0) + reward;
+                    // FIX: Ensure float calculation
+                    const newBal = (parseFloat(userProfile.balance) || 0) + parseFloat(reward);
+                    updates[`users/${userId}/balance`] = newBal;
                     updates[`users/${userId}/completed_tasks/${taskId}`] = true;
                     
                     db.ref().update(updates).then(() => {
                         alert(`Reward Added: ${reward} BDT`);
-                        // renderDynamicTasks handled by updateUI trigger
                     });
                 }
             }, 5000); 
         }
 
         // ============================================
-        // WATCH ADS LOGIC (UPDATED: TRIAL MODE)
+        // WATCH ADS LOGIC (UPDATED: TRIAL & BALANCE FIX)
         // ============================================
         function checkAdResetCycle(cycle) {
+            // FIX: If data is missing (NaN), force a reset immediately
+            const lastReset = cycle.last_reset || 0;
+            
             // Reset every 12 hours (12 * 60 * 60 * 1000 = 43200000 ms)
-            if (Date.now() - cycle.last_reset > 43200000) {
+            if (Date.now() - lastReset > 43200000) {
+                // IMPORTANT: Only update ad_cycle, NEVER touch balance here to avoid bugs
                 dbRef.child('ad_cycle').update({ count: 0, last_reset: Date.now() });
             }
         }
 
         function tryWatchAd() {
             const status = userProfile.status || 'inactive';
-            const cycle = userProfile.ad_cycle || { count: 0, last_watch: 0 };
+            const cycle = userProfile.ad_cycle || { count: 0, last_watch: 0, last_reset: 0 };
+
+            // Explicitly check reset first
+            checkAdResetCycle(cycle);
             
-            // --- TRIAL LOGIC START ---
+            // --- TRIAL LOGIC (DAILY 3 ADS) ---
             if (status === 'inactive') {
+                // If the cycle (12h) has reset, the count is 0.
+                // This allows them to watch 3 ads EVERY reset cycle (Daily).
                 if (cycle.count >= 3) {
-                    // Trial Limit Reached - Show Bengali Prompt
-                    if(confirm("আপনানার ইনকাম বাড়াতে একাউন্ট একটিভ করুন ১০ টাকা দিয়ে। নাহলে কাজ আর উইথড্র কোনো টা করতে পারবেন না।\n\nএকাউন্ট একটিভ করতে এখানে চাপ দিন (OK)।")) {
+                    // Trial Limit Reached for today
+                    if(confirm("আজকের ৩টি ফ্রি এড দেখা শেষ। ইনকাম বাড়াতে একাউন্ট একটিভ করুন ১০ টাকা দিয়ে।\n\nএকাউন্ট একটিভ করতে এখানে চাপ দিন (OK)।")) {
                         openActivationModal();
                     }
                     return; // Stop execution
                 }
-                // If count < 3, allow execution (Proceed to ad logic below)
+                // If count < 3, allow execution
             } 
             else if (status === 'rejected') {
                 alert("Activation Rejected. Please check stats card.");
@@ -1071,10 +1086,12 @@
 
             
             // Standard Check (Daily Limit for Active/Pending Users)
-            if (cycle.count >= dailyLimit) {
+            if (status !== 'inactive' && cycle.count >= dailyLimit) {
                 alert(`Daily limit (${dailyLimit} Ads) reached! Resets in 12h.`);
                 return;
             }
+            
+            // Cooldown Check
             if (Date.now() - cycle.last_watch < 45000) {
                 alert("Please wait for cooldown!");
                 return;
@@ -1084,18 +1101,16 @@
             if (adminAdLink && adminAdLink.length > 5) {
                 window.open(adminAdLink, '_blank');
                 
-                // Delay reward to prevent "Instant" feel and simulate ad time
+                // Delay reward
                 setTimeout(() => {
                     giveAdReward();
                 }, 8000); 
             } else {
-                // 2. MONETAG SDK (May be blocked in Telegram)
+                // 2. MONETAG SDK
                 if (typeof show_10055912 === 'function') {
                     show_10055912().then(() => {
-                        // Success Callback
                         giveAdReward();
                     }).catch(e => {
-                        // Fallback logic
                         alert("Ad Loading... Please wait.");
                         setTimeout(() => {
                              giveAdReward();
@@ -1111,11 +1126,17 @@
         }
 
         function giveAdReward() {
+            // FIX: STRICT FLOAT CONVERSION TO PREVENT BALANCE ERRORS
             const currentBal = parseFloat(userProfile.balance || 0);
+            const rewardAmount = parseFloat(perAdReward);
+            
+            // Calculate new balance securely
+            const newBalance = parseFloat((currentBal + rewardAmount).toFixed(2));
+            
             const currentCount = userProfile.ad_cycle ? userProfile.ad_cycle.count : 0;
             
             dbRef.update({
-                balance: currentBal + perAdReward, // Use Admin Defined Reward
+                balance: newBalance,
                 'ad_cycle/count': currentCount + 1,
                 'ad_cycle/last_watch': Date.now()
             });
@@ -1161,10 +1182,14 @@
 
             const rewards = [0.1, 0.3, 0.5, 1.0];
             const prize = rewards[Math.floor(Math.random() * rewards.length)];
+            
+            // FIX: Float conversion
+            const currentBal = parseFloat(userProfile.balance || 0);
+            const newBal = parseFloat((currentBal + prize).toFixed(2));
 
             dbRef.update({
                 cards: (userProfile.cards || 0) - 1,
-                balance: parseFloat(userProfile.balance || 0) + prize
+                balance: newBal
             });
 
             const cardText = document.getElementById('cardText');
@@ -1180,22 +1205,37 @@
                 alert("Account must be Active (Verified) to withdraw.");
                 return;
             }
+            
+            // Disable button immediately to prevent double clicks (DOUBLE WITHDRAWAL FIX)
+            const btn = document.getElementById('withdrawBtn');
+            btn.disabled = true;
+            btn.innerText = "Processing...";
+
             const amount = parseFloat(document.getElementById('withdrawAmount').value);
             const method = document.getElementById('withdrawMethod').value;
             const number = document.getElementById('withdrawNumber').value;
+            const currentBal = parseFloat(userProfile.balance || 0);
 
             if (!method || !number || amount < 25 || amount > 35) {
                 alert("Invalid details or Amount (25-35)");
+                btn.disabled = false;
+                btn.innerText = "Withdraw";
                 return;
             }
-            if ((userProfile.balance || 0) < amount) {
+            if (currentBal < amount) {
                 alert("Insufficient balance.");
+                btn.disabled = false;
+                btn.innerText = "Withdraw";
                 return;
             }
 
             const reqId = db.ref('withdrawals').push().key;
             const updates = {};
-            updates['users/' + userId + '/balance'] = (userProfile.balance || 0) - amount;
+            
+            // FIX: Calculate new balance securely
+            const newBal = parseFloat((currentBal - amount).toFixed(2));
+            
+            updates['users/' + userId + '/balance'] = newBal;
             updates['withdrawals/' + reqId] = {
                 userId: userId,
                 userName: userProfile.name || 'User',
@@ -1209,6 +1249,12 @@
             db.ref().update(updates).then(() => {
                 alert("Withdrawal submitted!");
                 document.getElementById('withdrawAmount').value = '';
+                btn.disabled = false;
+                btn.innerText = "Withdraw";
+            }).catch(error => {
+                alert("Error submitting withdrawal. Try again.");
+                btn.disabled = false;
+                btn.innerText = "Withdraw";
             });
         }
 
