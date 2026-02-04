@@ -14,16 +14,6 @@
     <!-- === MONETAG ADS SDK === -->
     <script src="https://libtl.com/sdk.js" data-zone="10055912" data-sdk="show_10055912"></script>
 
-    <!-- === RICHADS SCRIPT === -->
-    <script src="https://richinfo.co/richpartners/telegram/js/tg-ob.js"></script>
-    <script>
-        window.TelegramAdsController = new TelegramAdsController();
-        window.TelegramAdsController.initialize({
-            pubId: "999942",
-            appId: "5838",
-        });
-    </script>
-
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -40,7 +30,6 @@
             --gold: #ffc107;
             --red: #ff4757;
             --nav-bg: #15111e;
-            --bkash-color: #e2136e;
         }
 
         * {
@@ -49,6 +38,7 @@
             padding: 0;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
         body {
@@ -59,6 +49,97 @@
             flex-direction: column;
             overflow: hidden;
         }
+
+        /* --- WELCOME OVERLAY (Gatekeeper) --- */
+        .welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #18122B 0%, #0f0c15 100%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .welcome-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .welcome-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .feature-box {
+            background: var(--card-bg);
+            border: 1px solid #332d42;
+            width: 100%;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            text-align: left;
+        }
+
+        .feature-icon {
+            width: 45px;
+            height: 45px;
+            background: rgba(123, 64, 242, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--primary);
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .feature-text h4 { font-size: 15px; margin-bottom: 3px; }
+        .feature-text p { font-size: 12px; color: var(--text-muted); }
+
+        .btn-welcome {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: 0.2s;
+        }
+
+        .btn-join {
+            background: linear-gradient(90deg, #0088cc, #005f8f);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.3);
+        }
+
+        .btn-continue {
+            background: linear-gradient(90deg, #7b40f2, #6a35d4);
+            color: white;
+            box-shadow: 0 4px 15px rgba(123, 64, 242, 0.3);
+            opacity: 0.6; /* Initially disabled look */
+        }
+        
+        .btn-continue.enabled { opacity: 1; }
 
         /* --- Header Section --- */
         .app-header {
@@ -159,49 +240,6 @@
         .btn-main:active { transform: scale(0.98); }
         .btn-main:disabled { background-color: #4a4a4a; cursor: not-allowed; box-shadow: none; }
 
-        /* --- Activation Status Banner --- */
-        .activation-status {
-            background-color: var(--red);
-            color: white;
-            padding: 10px;
-            text-align: center;
-            font-size: 12px;
-            font-weight: bold;
-            margin: 0 15px 15px 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 5px;
-            animation: pulse 2s infinite;
-        }
-
-        .activation-status.active {
-            background-color: var(--green);
-            animation: none;
-            cursor: default;
-        }
-        
-        .activation-status.pending {
-            background-color: var(--gold);
-            color: black;
-            animation: none;
-            cursor: default;
-        }
-
-        .activation-status.rejected {
-            background-color: var(--red);
-            animation: pulse 1s infinite;
-            cursor: pointer;
-        }
-
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 71, 87, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
-        }
-
         /* --- Tabs Logic --- */
         .tab-content {
             display: none;
@@ -255,27 +293,6 @@
             position: relative;
             overflow: hidden;
         }
-
-        /* Lock Overlay */
-        .card-lock-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 12, 21, 0.95);
-            backdrop-filter: blur(2px);
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border-radius: 15px;
-            display: none;
-        }
-        
-        .card-lock-overlay i { font-size: 30px; color: #ff4757; margin-bottom: 10px; }
-        .card-lock-overlay span { font-size: 14px; font-weight: bold; color: var(--red); }
 
         .ad-header {
             display: flex;
@@ -352,29 +369,45 @@
         }
 
         /* --- CARDS TAB Styles --- */
-        .scratch-card-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
+        .scratch-area {
+            position: relative;
+            width: 250px;
+            height: 150px;
+            margin: 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(123, 64, 242, 0.2);
+            border: 2px solid #332d42;
+            background: #2a2438;
         }
 
-        .scratch-card {
-            width: 160px;
-            height: 160px;
-            background: linear-gradient(135deg, #ffd700, #ffb900);
-            border-radius: 12px;
+        .scratch-prize {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #5c4206;
-            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
-            position: relative;
-            cursor: pointer;
-            transition: transform 0.2s;
+            z-index: 1;
         }
-        
-        .scratch-card:active { transform: scale(0.95); }
+
+        .scratch-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 2;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        .card-info-box {
+            background: #272133;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: var(--text-muted);
+            border-left: 3px solid var(--primary);
+        }
 
         /* --- INVITE TAB Styles --- */
         .invite-box {
@@ -486,86 +519,50 @@
         .nav-item.active { color: var(--primary); }
         .nav-item.active i { color: var(--primary); }
 
-        /* --- ACTIVATION MODAL --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.85);
-            z-index: 999;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            animation: fadeIn 0.3s;
-        }
-
-        .modal-box {
-            background-color: var(--card-bg);
-            border: 1px solid var(--primary);
-            border-radius: 15px;
-            padding: 25px;
-            width: 100%;
-            max-width: 350px;
-            text-align: center;
-            box-shadow: 0 0 30px rgba(123, 64, 242, 0.4);
-        }
-
-        .modal-icon {
-            font-size: 50px;
-            color: var(--gold);
-            margin-bottom: 15px;
-        }
-        
-        .modal-icon.danger { color: var(--red); }
-
-        .modal-title {
-            font-size: 20px;
-            margin-bottom: 10px;
-            color: white;
-        }
-
-        .modal-desc {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-
-        .pay-info {
-            background: #2a2438;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border: 1px dashed #555;
-            text-align: center;
-        }
-        
-        .pay-number {
-            color: var(--bkash-color);
-            font-size: 22px;
-            font-weight: bold;
-            display: block;
-            margin: 5px 0;
-            letter-spacing: 1px;
-            user-select: all;
-        }
-
-        .pay-method-badge {
-            background-color: var(--bkash-color);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            display: inline-block;
-            margin-bottom: 5px;
-        }
-
     </style>
 </head>
 <body>
+
+    <!-- === WELCOME / GATEKEEPER SCREEN === -->
+    <div class="welcome-overlay" id="welcomeScreen">
+        <h1 class="welcome-title">Welcome, <span id="welcomeName">User</span>!</h1>
+        <p class="welcome-subtitle">
+            Join our bot and earn scratch cards for referring users. 
+            Scratch to win real cash and withdraw anytime!
+        </p>
+
+        <div class="feature-box">
+            <div class="feature-icon"><i class="fa-solid fa-gift"></i></div>
+            <div class="feature-text">
+                <h4>Instant Rewards</h4>
+                <p>Get scratch cards for every task</p>
+            </div>
+        </div>
+
+        <div class="feature-box">
+            <div class="feature-icon"><i class="fa-solid fa-users"></i></div>
+            <div class="feature-text">
+                <h4>Referral Program</h4>
+                <p>Earn more by inviting friends</p>
+            </div>
+        </div>
+
+        <div class="feature-box">
+            <div class="feature-icon"><i class="fa-solid fa-wallet"></i></div>
+            <div class="feature-text">
+                <h4>Instant Withdrawals</h4>
+                <p>Get your cash anytime</p>
+            </div>
+        </div>
+
+        <button class="btn-welcome btn-join" onclick="openChannel()">
+            Join Channel to Continue <i class="fa-solid fa-arrow-right"></i>
+        </button>
+
+        <button class="btn-welcome btn-continue" id="btnContinue" onclick="checkAndContinue()">
+            Continue <i class="fa-solid fa-arrow-right"></i>
+        </button>
+    </div>
 
     <!-- Header -->
     <header class="app-header">
@@ -578,7 +575,7 @@
         </div>
     </header>
 
-    <!-- LIVE NOTICE BAR (Sync with Admin) -->
+    <!-- LIVE NOTICE BAR -->
     <div class="notice-bar">
         <marquee id="liveNotice">Welcome to Earning Pro! Start earning today...</marquee>
     </div>
@@ -599,11 +596,6 @@
         </div>
     </div>
 
-    <!-- Activation Alert Banner -->
-    <div class="activation-status" id="mainStatus" onclick="handleStatusClick()">
-        <i class="fa-solid fa-spinner fa-spin"></i> Loading...
-    </div>
-
     <!-- Scrollable Content -->
     <div class="content-area">
         
@@ -621,12 +613,6 @@
 
             <!-- AD CARD -->
             <div class="ad-card">
-                <!-- Lock Overlay -->
-                <div class="card-lock-overlay" id="adLock">
-                    <i class="fa-solid fa-lock"></i>
-                    <span>Activate Account First</span>
-                </div>
-
                 <div class="ad-header">
                     <div><strong>Daily Ads ⚡</strong></div>
                     <div class="coin-badge"><i class="fa-solid fa-coins"></i> <span id="displayPerAd">0.50</span> BDT</div>
@@ -650,7 +636,7 @@
                 </button>
             </div>
 
-            <!-- DYNAMIC TASK LIST (Sync with Admin) -->
+            <!-- DYNAMIC TASK LIST -->
             <div class="section-title">Extra Tasks</div>
             <div id="dynamicTaskList">
                 <div class="empty-state" style="padding: 20px 0;">
@@ -662,27 +648,39 @@
 
         <!-- === CARDS TAB === -->
         <div id="tab-cards" class="tab-content container">
-            <div class="section-title">Available Scratch Cards</div>
+            <div class="section-title">Scratch & Win</div>
             <hr style="border: 0; border-top: 1px solid #332d42; margin-bottom: 20px;">
             
-            <div class="scratch-card-container">
-                <div class="scratch-card" onclick="scratchCard()">
-                    <!-- Lock Overlay -->
-                    <div class="card-lock-overlay" id="cardLock" style="display: flex; border-radius: 12px;">
-                        <i class="fa-solid fa-lock"></i>
-                    </div>
-                    <i class="fa-solid fa-crown"></i>
-                    <span id="cardText">TAP TO SCRATCH</span>
-                </div>
+            <div style="text-align:center; color:white; margin-bottom:10px;">
+                Available Cards: <span style="color:var(--gold); font-weight:bold;" id="cardsAvailable">0</span>
             </div>
-            <p style="text-align:center; color:#8e8ba3; font-size:14px; margin-top:15px; font-weight: bold;">
-                স্ক্র্যাচ করে পুরস্কার জিতুন!
-            </p>
+
+            <!-- Real Scratch Area -->
+            <div class="scratch-area" id="scratchPadContainer">
+                <!-- Prize hidden underneath -->
+                <div class="scratch-prize">
+                    <i class="fa-solid fa-crown" style="font-size: 30px; color: #ffc107; margin-bottom: 10px;"></i>
+                    <span id="scratchResult" style="font-size: 20px; font-weight: bold; color: white;">???</span>
+                </div>
+                <!-- Canvas Cover -->
+                <canvas id="scratchCanvas" class="scratch-canvas" width="250" height="150"></canvas>
+            </div>
+
+            <div class="card-info-box">
+                <strong>কিভাবে কার্ড পাবেন?</strong><br>
+                প্রতিটি ভ্যালিড রেফারের জন্য আপনি ১টি করে স্ক্র্যাচ কার্ড পাবেন।<br><br>
+                <strong>কিভাবে ব্যবহার করবেন?</strong><br>
+                উপরের বক্সে আঙুল দিয়ে ঘষে (Swipe করে) কভার সরান। ভিতরে আপনার পুরস্কার দেখতে পাবেন যা সাথে সাথে ব্যালেন্সে যোগ হবে।
+            </div>
+            
+            <button class="btn-main" onclick="resetScratchPad()" style="margin-top:20px; background:#2a2438; border:1px solid #383147;">
+                <i class="fa-solid fa-rotate-right"></i> Try Another Card
+            </button>
         </div>
 
         <!-- === INVITE TAB === -->
         <div id="tab-invite" class="tab-content container">
-            <a href="#" target="_blank" class="join-channel-btn" id="channelBtn">
+            <a href="https://t.me/shbtechbd" target="_blank" class="join-channel-btn">
                 <i class="fa-brands fa-telegram"></i> Join Our Channel
             </a>
 
@@ -767,43 +765,6 @@
         </div>
     </nav>
 
-    <!-- === ACTIVATION MODAL POPUP === -->
-    <div id="activationModal" class="modal-overlay">
-        <div class="modal-box">
-            <div class="modal-icon"><i class="fa-solid fa-shield-halved"></i></div>
-            <h3 class="modal-title">Activate Premium</h3>
-            <p class="modal-desc">
-                একাউন্ট অ্যাক্টিভ করতে নিচের নাম্বারে ১০ টাকা <strong>Send Money</strong> করুন এবং TrxID দিন।
-            </p>
-
-            <div class="pay-info">
-                <span class="pay-method-badge">BKASH PERSONAL</span>
-                <span class="pay-number">01604858143</span>
-                <span style="font-size:12px; color:#00d29d;">(Send Money Only)</span>
-            </div>
-
-            <div class="form-group" style="text-align: left;">
-                <label class="form-label">Enter Transaction ID (TrxID)</label>
-                <input type="text" class="form-input" id="payProof" placeholder="Example: 9G7H....." style="text-transform: uppercase;">
-            </div>
-
-            <button class="btn-main" onclick="processActivation()">Verify & Activate</button>
-            <button style="background:transparent; border:none; color:#8e8ba3; margin-top:10px; font-size:12px; cursor:pointer;" onclick="closeModal('activationModal')">Close</button>
-        </div>
-    </div>
-
-    <!-- === REJECTION ALERT MODAL === -->
-    <div id="rejectionModal" class="modal-overlay">
-        <div class="modal-box">
-            <div class="modal-icon danger"><i class="fa-solid fa-circle-exclamation"></i></div>
-            <h3 class="modal-title" style="color: #ff4757;">Activation Rejected</h3>
-            <p class="modal-desc">
-                এডমিন আপনার পেমেন্ট রিকোয়েস্ট রিজেক্ট করেছে। TrxID ভুল ছিল অথবা টাকা পাওয়া যায়নি। অনুগ্রহ করে সঠিক তথ্য দিয়ে আবার চেষ্টা করুন।
-            </p>
-            <button class="btn-main" onclick="closeModal('rejectionModal'); openActivationModal();">Try Again</button>
-        </div>
-    </div>
-
     <script>
         // ============================================
         // FIREBASE CONFIGURATION
@@ -836,23 +797,30 @@
         const startParam = tg.initDataUnsafe?.start_param; 
 
         const BOT_USERNAME = "Task_To_Work_bot"; 
+        const CHANNEL_LINK = "https://t.me/shbtechbd";
 
         // Global Variables
         let userProfile = {};
         let dbRef = db.ref('users/' + userId);
         
-        // Admin Controlled Variables (Defaults)
         let adminAdLink = null;
         let dailyLimit = 6;
         let perAdReward = 0.50;
-        let currentTasks = {}; // Store tasks globally for re-rendering
+        let currentTasks = {};
+        
+        // Gatekeeper State
+        let hasJoinedChannel = false;
 
         // ============================================
         // INITIALIZATION
         // ============================================
         window.onload = function() {
             document.getElementById('displayUserId').innerText = userId;
+            document.getElementById('welcomeName').innerText = userName;
             document.getElementById('refLink').value = `https://t.me/${BOT_USERNAME}?startapp=${userId}`;
+
+            // Initialize Scratch Canvas
+            initScratchCard();
 
             // 1. Fetch User Data
             dbRef.once('value').then((snapshot) => {
@@ -868,14 +836,10 @@
                 const settings = snap.val();
                 if(settings) {
                     if(settings.notice) document.getElementById('liveNotice').innerText = settings.notice;
-                    if(settings.channel) document.getElementById('channelBtn').href = settings.channel;
                     if(settings.adLink) adminAdLink = settings.adLink;
-                    
-                    // Daily Settings from Admin Panel
                     if(settings.dailyLimit) dailyLimit = parseInt(settings.dailyLimit);
                     if(settings.perAdReward) perAdReward = parseFloat(settings.perAdReward);
                     
-                    // Update UI with Admin Settings
                     document.getElementById('displayPerAd').innerText = perAdReward.toFixed(2);
                     document.getElementById('dailyLimitDisp').innerText = dailyLimit;
                 }
@@ -884,17 +848,35 @@
             // 3. Fetch Dynamic Tasks
             db.ref('tasks').on('value', snap => {
                 const tasks = snap.val();
-                currentTasks = tasks; // Store globally
+                currentTasks = tasks;
                 renderDynamicTasks(tasks);
             });
         };
+
+        // --- WELCOME SCREEN LOGIC ---
+        function openChannel() {
+            window.open(CHANNEL_LINK, '_blank');
+            hasJoinedChannel = true;
+            document.getElementById('btnContinue').classList.add('enabled');
+        }
+
+        function checkAndContinue() {
+            if (!hasJoinedChannel) {
+                // Telegram doesn't allow checking 'join' status client-side easily without bot api.
+                // We force the user flow: Must click Join first.
+                alert("Please join our channel first to continue!");
+                return;
+            }
+            // Hide Overlay
+            document.getElementById('welcomeScreen').style.display = 'none';
+        }
 
         function createUser(referrerId) {
             const initialData = {
                 id: userId,
                 name: userName,
                 balance: 0.00,
-                status: 'inactive',
+                status: 'active', // Everyone is active now
                 cards: 0,
                 referrals: 0,
                 ad_cycle: { count: 0, last_reset: Date.now(), last_watch: 0 },
@@ -931,55 +913,21 @@
         // UI UPDATES
         // ============================================
         function updateUI() {
-            // FIX: Ensure balance is treated as a float
             const bal = parseFloat(userProfile.balance || 0);
             document.getElementById('userBalance').innerText = bal.toFixed(2);
             
             document.getElementById('userCards').innerText = userProfile.cards || 0;
+            document.getElementById('cardsAvailable').innerText = userProfile.cards || 0;
             document.getElementById('refCount').innerText = userProfile.referrals || 0;
 
             const cycle = userProfile.ad_cycle || { count: 0, last_reset: 0 };
             
-            // Check for Reset Cycle
             checkAdResetCycle(cycle);
             
             document.getElementById('adsWatchedCount').innerText = cycle.count || 0;
             const progressPct = ((cycle.count || 0) / dailyLimit) * 100;
             document.getElementById('adProgressBar').style.width = progressPct + "%";
-
-            const status = userProfile.status || 'inactive';
-            const banner = document.getElementById('mainStatus');
-            const adLock = document.getElementById('adLock');
-            const cardLock = document.getElementById('cardLock');
-
-            banner.className = 'activation-status'; 
-            if (status === 'active') {
-                banner.classList.add('active');
-                banner.innerHTML = '<i class="fa-solid fa-check-circle"></i> Earning Pro Verified';
-                adLock.style.display = 'none';
-                cardLock.style.display = 'none';
-            } else if (status === 'pending') {
-                banner.classList.add('pending');
-                banner.innerHTML = '<i class="fa-solid fa-clock"></i> Approval Pending (Tasks Open)';
-                adLock.style.display = 'none'; 
-                cardLock.style.display = 'none';
-            } else if (status === 'rejected') {
-                banner.classList.add('rejected');
-                banner.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Request Rejected (Click to Fix)';
-                adLock.style.display = 'flex';
-                cardLock.style.display = 'flex';
-            } else {
-                // INACTIVE / TRIAL MODE
-                banner.innerHTML = '<i class="fa-solid fa-lock"></i> Account Not Activated (Click to Activate)';
-                
-                // Allow user to click ad button to trigger trial Logic (Hide Lock Overlay)
-                adLock.style.display = 'none'; 
-                
-                // Keep Scratch Card Locked for inactive
-                cardLock.style.display = 'flex';
-            }
             
-            // Re-render tasks to update button states immediately
             if(currentTasks) renderDynamicTasks(currentTasks);
         }
 
@@ -1019,20 +967,11 @@
         }
 
         function doTask(taskId, link, reward) {
-            if(userProfile.status === 'inactive' || userProfile.status === 'rejected') {
-                alert("Activate account first to do extra tasks!");
-                return;
-            }
-
-            // Open Link
             window.open(link, '_blank');
-
-            // Simulate Verification & Reward
             setTimeout(() => {
                 const confirmClaim = confirm("Did you join/complete the task?");
                 if(confirmClaim) {
                     const updates = {};
-                    // FIX: Ensure float calculation
                     const newBal = (parseFloat(userProfile.balance) || 0) + parseFloat(reward);
                     updates[`users/${userId}/balance`] = newBal;
                     updates[`users/${userId}/completed_tasks/${taskId}`] = true;
@@ -1045,94 +984,47 @@
         }
 
         // ============================================
-        // WATCH ADS LOGIC (UPDATED: TRIAL & BALANCE FIX)
+        // WATCH ADS LOGIC
         // ============================================
         function checkAdResetCycle(cycle) {
-            // FIX: If data is missing (NaN), force a reset immediately
             const lastReset = cycle.last_reset || 0;
-            
-            // Reset every 12 hours (12 * 60 * 60 * 1000 = 43200000 ms)
             if (Date.now() - lastReset > 43200000) {
-                // IMPORTANT: Only update ad_cycle, NEVER touch balance here to avoid bugs
                 dbRef.child('ad_cycle').update({ count: 0, last_reset: Date.now() });
             }
         }
 
         function tryWatchAd() {
-            const status = userProfile.status || 'inactive';
             const cycle = userProfile.ad_cycle || { count: 0, last_watch: 0, last_reset: 0 };
-
-            // Explicitly check reset first
             checkAdResetCycle(cycle);
             
-            // --- TRIAL LOGIC (DAILY 3 ADS) ---
-            if (status === 'inactive') {
-                // If the cycle (12h) has reset, the count is 0.
-                // This allows them to watch 3 ads EVERY reset cycle (Daily).
-                if (cycle.count >= 3) {
-                    // Trial Limit Reached for today
-                    if(confirm("আজকের ৩টি ফ্রি এড দেখা শেষ। ইনকাম বাড়াতে একাউন্ট একটিভ করুন ১০ টাকা দিয়ে।\n\nএকাউন্ট একটিভ করতে এখানে চাপ দিন (OK)।")) {
-                        openActivationModal();
-                    }
-                    return; // Stop execution
-                }
-                // If count < 3, allow execution
-            } 
-            else if (status === 'rejected') {
-                alert("Activation Rejected. Please check stats card.");
-                return;
-            }
-            // --- TRIAL LOGIC END ---
-
-            
-            // Standard Check (Daily Limit for Active/Pending Users)
-            if (status !== 'inactive' && cycle.count >= dailyLimit) {
+            if (cycle.count >= dailyLimit) {
                 alert(`Daily limit (${dailyLimit} Ads) reached! Resets in 12h.`);
                 return;
             }
             
-            // Cooldown Check
             if (Date.now() - cycle.last_watch < 45000) {
                 alert("Please wait for cooldown!");
                 return;
             }
 
-            // 1. PRIORITY: Admin Direct Link (Works best in Telegram)
             if (adminAdLink && adminAdLink.length > 5) {
                 window.open(adminAdLink, '_blank');
-                
-                // Delay reward
-                setTimeout(() => {
-                    giveAdReward();
-                }, 8000); 
+                setTimeout(() => { giveAdReward(); }, 8000); 
             } else {
-                // 2. MONETAG SDK
                 if (typeof show_10055912 === 'function') {
-                    show_10055912().then(() => {
-                        giveAdReward();
-                    }).catch(e => {
-                        alert("Ad Loading... Please wait.");
-                        setTimeout(() => {
-                             giveAdReward();
-                        }, 5000);
-                    });
+                    show_10055912().then(() => { giveAdReward(); })
+                    .catch(e => { setTimeout(() => { giveAdReward(); }, 5000); });
                 } else {
                     alert("Ad Loading... Please wait.");
-                    setTimeout(() => {
-                        giveAdReward();
-                    }, 5000);
+                    setTimeout(() => { giveAdReward(); }, 5000);
                 }
             }
         }
 
         function giveAdReward() {
-            // FIX: STRICT FLOAT CONVERSION TO PREVENT BALANCE ERRORS
             const currentBal = parseFloat(userProfile.balance || 0);
             const rewardAmount = parseFloat(perAdReward);
-            
-            // Calculate new balance securely
             const newBalance = parseFloat((currentBal + rewardAmount).toFixed(2));
-            
             const currentCount = userProfile.ad_cycle ? userProfile.ad_cycle.count : 0;
             
             dbRef.update({
@@ -1167,46 +1059,133 @@
         }
 
         // ============================================
-        // SCRATCH & WITHDRAW LOGIC
+        // REAL SCRATCH CARD LOGIC (CANVAS)
         // ============================================
-        function scratchCard() {
-             const status = userProfile.status;
-            if (status !== 'active' && status !== 'pending') return;
+        let isScratching = false;
+        let isCardRevealed = false;
+        let scratchCtx;
+        
+        function initScratchCard() {
+            const canvas = document.getElementById('scratchCanvas');
+            scratchCtx = canvas.getContext('2d');
+            
+            // Reset state
+            isCardRevealed = false;
+            
+            // Draw gray overlay
+            scratchCtx.globalCompositeOperation = 'source-over';
+            scratchCtx.fillStyle = '#b3b3b3'; 
+            scratchCtx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add text "SCRATCH HERE"
+            scratchCtx.fillStyle = '#333';
+            scratchCtx.font = '20px Arial';
+            scratchCtx.textAlign = 'center';
+            scratchCtx.fillText("SCRATCH ME", canvas.width/2, canvas.height/2);
 
+            // Add Event Listeners
+            canvas.addEventListener('mousedown', startScratch);
+            canvas.addEventListener('touchstart', startScratch);
+            canvas.addEventListener('mousemove', scratch);
+            canvas.addEventListener('touchmove', scratch);
+            canvas.addEventListener('mouseup', endScratch);
+            canvas.addEventListener('touchend', endScratch);
+        }
+
+        function getMousePos(canvas, evt) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = evt.clientX || evt.touches[0].clientX;
+            const clientY = evt.clientY || evt.touches[0].clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function startScratch(e) {
+            e.preventDefault();
+            if(isCardRevealed) return;
+
+            // Check if user has cards
             if ((userProfile.cards || 0) <= 0) {
-                alert("No cards! Invite friends.");
+                alert("No cards available! Refer friends to earn cards.");
                 return;
             }
+            isScratching = true;
+        }
 
-            if (!confirm("Use 1 Card to Scratch?")) return;
+        function scratch(e) {
+            if (!isScratching || isCardRevealed) return;
+            e.preventDefault();
 
-            const rewards = [0.1, 0.3, 0.5, 1.0];
+            const canvas = document.getElementById('scratchCanvas');
+            const pos = getMousePos(canvas, e);
+
+            scratchCtx.globalCompositeOperation = 'destination-out';
+            scratchCtx.beginPath();
+            scratchCtx.arc(pos.x, pos.y, 15, 0, Math.PI * 2);
+            scratchCtx.fill();
+
+            checkScratchCompletion(canvas);
+        }
+
+        function endScratch() {
+            isScratching = false;
+        }
+
+        function checkScratchCompletion(canvas) {
+            const imageData = scratchCtx.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = imageData.data;
+            let transparentPixels = 0;
+
+            for (let i = 0; i < pixels.length; i += 4) {
+                if (pixels[i + 3] < 128) {
+                    transparentPixels++;
+                }
+            }
+
+            const percentage = (transparentPixels / (pixels.length / 4)) * 100;
+
+            if (percentage > 40 && !isCardRevealed) {
+                isCardRevealed = true;
+                completeScratch();
+            }
+        }
+
+        function completeScratch() {
+            const rewards = [0.20, 0.50, 1.00, 2.00];
             const prize = rewards[Math.floor(Math.random() * rewards.length)];
             
-            // FIX: Float conversion
+            document.getElementById('scratchResult').innerText = `+${prize} BDT`;
+            
+            // Clear entire canvas
+            scratchCtx.clearRect(0, 0, 300, 150);
+
+            // Update Database
             const currentBal = parseFloat(userProfile.balance || 0);
             const newBal = parseFloat((currentBal + prize).toFixed(2));
 
             dbRef.update({
                 cards: (userProfile.cards || 0) - 1,
                 balance: newBal
+            }).then(() => {
+                alert(`Congratulation! You won ${prize} BDT`);
             });
-
-            const cardText = document.getElementById('cardText');
-            cardText.innerText = `+${prize} BDT`;
-            setTimeout(() => {
-                alert(`Won ${prize} BDT`);
-                cardText.innerText = "TAP TO SCRATCH";
-            }, 500);
         }
 
-        function attemptWithdraw() {
-            if (userProfile.status !== 'active') {
-                alert("Account must be Active (Verified) to withdraw.");
-                return;
+        function resetScratchPad() {
+            if ((userProfile.cards || 0) > 0) {
+                initScratchCard();
+                document.getElementById('scratchResult').innerText = "???";
+            } else {
+                alert("You don't have enough cards!");
             }
-            
-            // Disable button immediately to prevent double clicks (DOUBLE WITHDRAWAL FIX)
+        }
+
+        // ============================================
+        // WITHDRAW LOGIC
+        // ============================================
+        function attemptWithdraw() {
             const btn = document.getElementById('withdrawBtn');
             btn.disabled = true;
             btn.innerText = "Processing...";
@@ -1231,8 +1210,6 @@
 
             const reqId = db.ref('withdrawals').push().key;
             const updates = {};
-            
-            // FIX: Calculate new balance securely
             const newBal = parseFloat((currentBal - amount).toFixed(2));
             
             updates['users/' + userId + '/balance'] = newBal;
@@ -1256,37 +1233,6 @@
                 btn.disabled = false;
                 btn.innerText = "Withdraw";
             });
-        }
-
-        // ============================================
-        // ACTIVATION
-        // ============================================
-        function openActivationModal() {
-            document.getElementById('payProof').value = ""; 
-            document.getElementById('activationModal').style.display = 'flex';
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        function processActivation() {
-            const trxId = document.getElementById('payProof').value.trim();
-            if(trxId.length < 4) { alert("Invalid TrxID"); return; }
-
-            dbRef.update({
-                status: 'pending',
-                activation_req: { trx: trxId, time: Date.now(), method: 'bkash', status: 'pending' }
-            }).then(() => {
-                closeModal('activationModal');
-                alert("Request Sent!");
-            });
-        }
-
-        function handleStatusClick() {
-            if (!userProfile.status || userProfile.status === 'inactive' || userProfile.status === 'rejected') {
-                openActivationModal();
-            }
         }
 
         // ============================================
